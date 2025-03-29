@@ -6,10 +6,14 @@ import queue
 
 from protobuf import chat_pb2
 from protobuf import chat_pb2_grpc
+from .database import ChatDatabase
 
 # Global list of client queues
 clients = []
 clients_lock = threading.Lock()
+
+# Initialize the database
+db = ChatDatabase()
 
 def broadcast_message(message, sender):
     with clients_lock:
@@ -28,6 +32,9 @@ class ChatServiceServicer(chat_pb2_grpc.ChatServiceServicer):
         # Thread to handle incoming messages from this client
         def read_requests():
             for message in request_iterator:
+                # Save message to database
+                db.save_message(message.sender, message.text)
+                
                 print(f"Received from {message.sender}: {message.text}")
                 # Pass the sender's queue to the broadcast function
                 broadcast_message(message, q)
@@ -47,10 +54,17 @@ class ChatServiceServicer(chat_pb2_grpc.ChatServiceServicer):
 def server_console():
     """Read messages from the server operator and broadcast them."""
     while True:
-        msg_text = input()
-        if msg_text:
-            message = chat_pb2.ChatMessage(sender="Server", text=msg_text)
-            broadcast_message(message, None)  # No sender for server messages
+        text = input("Server: ")
+        if text.lower() == 'exit':
+            break
+            
+        message = chat_pb2.ChatMessage(sender="Server", text=text)
+        
+        # Save server message to database
+        db.save_message(message.sender, message.text)
+        
+        # Continue with existing broadcast logic
+        broadcast_message(message, None)  # No sender for server messages
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -67,6 +81,7 @@ def serve():
             time.sleep(86400)
     except KeyboardInterrupt:
         server.stop(0)
+        db.close()  # Close database connection when server stops
 
 if __name__ == '__main__':
     serve()
