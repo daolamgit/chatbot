@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 from src.client import outgoing_message_generator
 from src.server import broadcast_message, ChatServiceServicer
+import queue
 
 class TestClient(unittest.TestCase):
     def test_outgoing_message_generator(self):
@@ -28,7 +29,10 @@ class TestServer(unittest.TestCase):
     @patch('src.server.queue.Queue')
     def test_chat_stream(self, mock_queue):
         servicer = ChatServiceServicer()
-        request_iterator = iter([MagicMock(sender="User", text="Hello")])
+        mock_message = MagicMock()
+        mock_message.sender = "User"
+        mock_message.text = "Hello"
+        request_iterator = iter([mock_message])
         context = MagicMock()
         
         response_iterator = servicer.ChatStream(request_iterator, context)

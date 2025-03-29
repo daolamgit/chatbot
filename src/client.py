@@ -2,8 +2,8 @@ import grpc
 import threading
 import queue
 
-import chat_pb2
-import chat_pb2_grpc
+from protobuf import chat_pb2
+from protobuf import chat_pb2_grpc
 
 def outgoing_message_generator(q):
     """Generator function that yields messages from the outgoing queue."""
