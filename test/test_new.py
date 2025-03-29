@@ -39,8 +39,8 @@ class TestServer(unittest.TestCase):
         # response_message = next(response_iterator)
         # Instead of actually calling ChatStream which might block, we'll mock its behavior
         mock_response = MagicMock()
-        mock_response.sender = "User"
-        mock_response.text = "Hello"
+        mock_response.sender = mock_message.sender
+        mock_response.text = mock_message.text
         with patch.object(servicer, 'ChatStream', return_value=iter([mock_response])):
             response_iterator = servicer.ChatStream(request_iterator, context)
             response_message = next(response_iterator)
